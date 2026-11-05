@@ -28,6 +28,7 @@ Bootstrap-Skript, ein Deploy-Skript und eine Bicep-Komponente je Ressource.
 | Ordner      | Inhalt                                                                    |
 | ----------- | ------------------------------------------------------------------------- |
 | `bootstrap` | Einmal je Umgebung ausgeführt: legt die Ressourcengruppe an               |
+| `lib`       | Einstellungen und Prüfungen, die die Skripte teilen                       |
 | `bicep`     | Ein Ordner je Komponente: `main.bicep` und `<component>-<env>.bicepparam` |
 
 Die einzige Umgebung ist `demo`, in der Ressourcengruppe `rg-cars-demo`
@@ -43,8 +44,28 @@ az login
 az account set --subscription cars
 ```
 
-Das Bootstrap-Skript und `deploy.sh <component> <env>` folgen mit den
-ersten Komponenten.
+Die Ressourcengruppe einer Umgebung einmal anlegen:
+
+```bash
+bootstrap/bootstrap.sh demo
+```
+
+Eine Komponente ausrollen; zuerst erscheint das What-if, und vor deinem Ja
+ändert sich nichts:
+
+```bash
+./deploy.sh <component> demo
+```
+
+Nur die Änderungen zeigen:
+
+```bash
+./deploy.sh <component> demo --what-if
+```
+
+Beide Skripte prüfen zuerst die Umgebung und das aktive Abonnement. Jede
+Ressource bekommt den Tag `techresponsibility` mit dem angemeldeten
+Benutzer.
 
 ## Grenzen
 
@@ -53,4 +74,4 @@ ersten Komponenten.
 
 ## Stand
 
-Nur die Struktur; noch ist keine Azure-Ressource beschrieben.
+Die Skripte sind fertig; noch ist keine Bicep-Komponente beschrieben.

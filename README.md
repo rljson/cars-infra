@@ -28,6 +28,7 @@ resource.
 | Folder      | Content                                                                   |
 | ----------- | ------------------------------------------------------------------------- |
 | `bootstrap` | Run once per environment: creates the resource group                      |
+| `lib`       | Settings and checks shared by the scripts                                 |
 | `bicep`     | One folder per component: `main.bicep` and `<component>-<env>.bicepparam` |
 
 The only environment is `demo`, in the resource group `rg-cars-demo` in
@@ -43,8 +44,27 @@ az login
 az account set --subscription cars
 ```
 
-The bootstrap script and `deploy.sh <component> <env>` follow with the
-first components.
+Create the resource group of an environment once:
+
+```bash
+bootstrap/bootstrap.sh demo
+```
+
+Deploy a component; the what-if is shown first and nothing changes before
+your yes:
+
+```bash
+./deploy.sh <component> demo
+```
+
+Only show the changes:
+
+```bash
+./deploy.sh <component> demo --what-if
+```
+
+Both scripts check the environment and the active subscription first.
+Every resource gets the tag `techresponsibility` with the signed-in user.
 
 ## Limitations
 
@@ -53,4 +73,4 @@ first components.
 
 ## Status
 
-Structure only; no Azure resource is described yet.
+The scripts are ready; no Bicep component is described yet.

@@ -15,6 +15,8 @@ bicep/<component>/main.bicep
 bicep/<component>/<component>-demo.bicepparam
 ```
 
-`az bicep build` of every file is the test of this repo and runs before
-each commit. `deploy.sh <component> <env>` deploys a component with a
+Every `main.bicep` declares `param techResponsibility string` and sets it
+as the tag `techresponsibility` on each resource; `deploy.sh` passes the
+signed-in user. `az bicep build` of every file is the test of this repo
+and runs before each commit. `deploy.sh <component> <env>` deploys a component with a
 what-if first.

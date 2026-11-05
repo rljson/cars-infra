@@ -90,6 +90,7 @@ Vor jedem Commit jede Bicep- und Parameterdatei bauen:
 
 ## Stand
 
-| Komponente      | Ressource       | In demo ausgerollt |
-| --------------- | --------------- | ------------------ |
-| `log-analytics` | `log-cars-demo` | ja                 |
+| Komponente           | Ressource       | In demo ausgerollt |
+| -------------------- | --------------- | ------------------ |
+| `log-analytics`      | `log-cars-demo` | ja                 |
+| `container-registry` | `crcarsdemo`    | ja                 |

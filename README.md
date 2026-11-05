@@ -89,6 +89,7 @@ Build every Bicep and parameter file before each commit:
 
 ## Status
 
-| Component       | Resource        | Deployed to demo |
-| --------------- | --------------- | ---------------- |
-| `log-analytics` | `log-cars-demo` | yes              |
+| Component            | Resource        | Deployed to demo |
+| -------------------- | --------------- | ---------------- |
+| `log-analytics`      | `log-cars-demo` | yes              |
+| `container-registry` | `crcarsdemo`    | yes              |

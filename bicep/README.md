@@ -24,6 +24,7 @@ signed-in user. Each `.bicepparam` assigns it the placeholder `''`, which
 each commit. `deploy.sh <component> <env>` deploys a component with a
 what-if first.
 
-| Component       | Resource                                 | Settings in demo                    |
-| --------------- | ---------------------------------------- | ----------------------------------- |
-| `log-analytics` | Log Analytics workspace `log-cars-<env>` | 30 days retention, 0.5 GB daily cap |
+| Component            | Resource                                 | Settings in demo                                        |
+| -------------------- | ---------------------------------------- | ------------------------------------------------------- |
+| `log-analytics`      | Log Analytics workspace `log-cars-<env>` | 30 days retention, 0.5 GB daily cap                     |
+| `container-registry` | Container registry `crcars<env>`         | Basic, admin user off; images built with `az acr build` |

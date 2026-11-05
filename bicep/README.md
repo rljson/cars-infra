@@ -17,6 +17,13 @@ bicep/<component>/<component>-demo.bicepparam
 
 Every `main.bicep` declares `param techResponsibility string` and sets it
 as the tag `techresponsibility` on each resource; `deploy.sh` passes the
-signed-in user. `az bicep build` of every file is the test of this repo
-and runs before each commit. `deploy.sh <component> <env>` deploys a component with a
+signed-in user. Each `.bicepparam` assigns it the placeholder `''`, which
+`deploy.sh` overrides.
+
+`./test.sh` builds every file; it is the test of this repo and runs before
+each commit. `deploy.sh <component> <env>` deploys a component with a
 what-if first.
+
+| Component       | Resource                                 | Settings in demo                    |
+| --------------- | ---------------------------------------- | ----------------------------------- |
+| `log-analytics` | Log Analytics workspace `log-cars-<env>` | 30 days retention, 0.5 GB daily cap |

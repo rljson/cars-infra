@@ -30,11 +30,19 @@ Bootstrap-Skript, ein Deploy-Skript und eine Bicep-Komponente je Ressource.
 | `bootstrap` | Einmal je Umgebung ausgeführt: legt die Ressourcengruppe an               |
 | `lib`       | Einstellungen und Prüfungen, die die Skripte teilen                       |
 | `bicep`     | Ein Ordner je Komponente: `main.bicep` und `<component>-<env>.bicepparam` |
+| `test.sh`   | Baut jede Bicep- und Parameterdatei                                       |
 
 Die einzige Umgebung ist `demo`, in der Ressourcengruppe `rg-cars-demo`
-in West Europe.
+in Germany West Central.
 
 ## Verwendung
+
+Einmal die [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
+und ihre Bicep CLI installieren:
+
+```bash
+az bicep install
+```
 
 Zuerst mit dem eigenen Entra-Konto anmelden; der Betreiber braucht die
 Gruppe `cars-admins` oder `cars-operators`.
@@ -67,6 +75,14 @@ Beide Skripte prüfen zuerst die Umgebung und das aktive Abonnement. Jede
 Ressource bekommt den Tag `techresponsibility` mit dem angemeldeten
 Benutzer.
 
+## Test
+
+Vor jedem Commit jede Bicep- und Parameterdatei bauen:
+
+```bash
+./test.sh
+```
+
 ## Grenzen
 
 - Keine CI: Betreiber rollen von Hand von ihrem Rechner aus
@@ -74,4 +90,6 @@ Benutzer.
 
 ## Stand
 
-Die Skripte sind fertig; noch ist keine Bicep-Komponente beschrieben.
+| Komponente      | Ressource       | In demo ausgerollt |
+| --------------- | --------------- | ------------------ |
+| `log-analytics` | `log-cars-demo` | ja                 |

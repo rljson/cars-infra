@@ -8,7 +8,7 @@
 # Shared settings and checks of the scripts in this repo.
 
 SUBSCRIPTION="cars"
-LOCATION="westeurope"
+LOCATION="germanywestcentral"
 ENVIRONMENTS="demo"
 
 fail() {

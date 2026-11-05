@@ -14,6 +14,6 @@ Run once per environment, before any Bicep deploy:
 bootstrap/bootstrap.sh demo
 ```
 
-Creates the resource group `rg-cars-<env>` in West Europe with the tags
+Creates the resource group `rg-cars-<env>` in Germany West Central with the tags
 `application`, `environment` and `techresponsibility`. Does nothing when
 the group exists already.

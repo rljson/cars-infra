@@ -30,11 +30,19 @@ resource.
 | `bootstrap` | Run once per environment: creates the resource group                      |
 | `lib`       | Settings and checks shared by the scripts                                 |
 | `bicep`     | One folder per component: `main.bicep` and `<component>-<env>.bicepparam` |
+| `test.sh`   | Builds every Bicep and parameter file                                     |
 
 The only environment is `demo`, in the resource group `rg-cars-demo` in
-West Europe.
+Germany West Central.
 
 ## Usage
+
+Install the [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
+and its Bicep CLI once:
+
+```bash
+az bicep install
+```
 
 Sign in with your own Entra account first; the operator needs the group
 `cars-admins` or `cars-operators`.
@@ -66,6 +74,14 @@ Only show the changes:
 Both scripts check the environment and the active subscription first.
 Every resource gets the tag `techresponsibility` with the signed-in user.
 
+## Test
+
+Build every Bicep and parameter file before each commit:
+
+```bash
+./test.sh
+```
+
 ## Limitations
 
 - No CI: operators deploy by hand from their machine
@@ -73,4 +89,6 @@ Every resource gets the tag `techresponsibility` with the signed-in user.
 
 ## Status
 
-The scripts are ready; no Bicep component is described yet.
+| Component       | Resource        | Deployed to demo |
+| --------------- | --------------- | ---------------- |
+| `log-analytics` | `log-cars-demo` | yes              |

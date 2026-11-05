@@ -75,6 +75,27 @@ Beide Skripte prüfen zuerst die Umgebung und das aktive Abonnement. Jede
 Ressource bekommt den Tag `techresponsibility` mit dem angemeldeten
 Benutzer.
 
+## Der Cluster
+
+Der Cluster stoppt jeden Abend um 20:00 Uhr Berliner Zeit, damit er nicht
+ungenutzt über Nacht läuft. Starte ihn von Hand, bevor du arbeitest, und
+stoppe ihn, wenn du fertig bist; der Start dauert etwa fünf Minuten:
+
+```bash
+az aks start -g rg-cars-demo -n aks-cars-demo
+az aks stop -g rg-cars-demo -n aks-cars-demo
+```
+
+Mit `kubectl` meldest du dich über Entra an; der Cluster hat keine lokalen
+Konten. `kubectl` und `kubelogin` einmal installieren, z. B. mit
+`brew install kubectl Azure/kubelogin/kubelogin`:
+
+```bash
+az aks get-credentials -g rg-cars-demo -n aks-cars-demo
+kubelogin convert-kubeconfig -l azurecli
+kubectl get nodes
+```
+
 ## Test
 
 Vor jedem Commit jede Bicep- und Parameterdatei bauen:
@@ -87,10 +108,14 @@ Vor jedem Commit jede Bicep- und Parameterdatei bauen:
 
 - Keine CI: Betreiber rollen von Hand von ihrem Rechner aus
 - Nur eine Umgebung, `demo`
+- `aks` und `aks-schedule` vergeben Rollen über AcrPull hinaus; nur
+  Mitglieder von `cars-admins` können sie ausrollen
 
 ## Stand
 
-| Komponente           | Ressource       | In demo ausgerollt |
-| -------------------- | --------------- | ------------------ |
-| `log-analytics`      | `log-cars-demo` | ja                 |
-| `container-registry` | `crcarsdemo`    | ja                 |
+| Komponente           | Ressource                  | In demo ausgerollt |
+| -------------------- | -------------------------- | ------------------ |
+| `log-analytics`      | `log-cars-demo`            | ja                 |
+| `container-registry` | `crcarsdemo`               | ja                 |
+| `aks`                | `aks-cars-demo`            | ja                 |
+| `aks-schedule`       | `logic-cars-demo-aks-stop` | ja                 |

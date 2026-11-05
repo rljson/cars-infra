@@ -11,6 +11,9 @@ SUBSCRIPTION="cars"
 LOCATION="germanywestcentral"
 ENVIRONMENTS="demo"
 
+# Entra groups that get cluster admin rights in AKS
+CLUSTER_ADMIN_GROUPS="cars-admins cars-operators"
+
 fail() {
   echo "❌ $*" >&2
   exit 1
@@ -36,6 +39,16 @@ require_subscription() {
 }
 
 # Prints the user principal name of the signed-in user.
+# Prints the object IDs of the named Entra groups as a JSON array
+group_ids_json() {
+  local json="" name id
+  for name in "$@"; do
+    id="$(az ad group show --group "$name" --query id -o tsv)" || fail "Entra group '$name' not found"
+    json="$json${json:+,}\"$id\""
+  done
+  echo "[$json]"
+}
+
 signed_in_user() {
   az ad signed-in-user show --query userPrincipalName -o tsv
 }

@@ -36,12 +36,20 @@ group="$(resource_group "$env")"
   fail "$group is missing. Run: bootstrap/bootstrap.sh $env"
 
 user="$(signed_in_user)"
+extra=(--parameters techResponsibility="$user")
+
+# Components that grant cluster rights get the group object IDs, looked up
+# by name so no ID is kept in git
+if grep -q "^param clusterAdminGroupIds" "bicep/$component/main.bicep"; then
+  # shellcheck disable=SC2086
+  extra+=(--parameters clusterAdminGroupIds="$(group_ids_json $CLUSTER_ADMIN_GROUPS)")
+fi
 
 if [ "$mode" = "--what-if" ]; then
   az deployment group what-if \
     --resource-group "$group" \
     --parameters "$params" \
-    --parameters techResponsibility="$user"
+    "${extra[@]}"
   exit 0
 fi
 
@@ -49,5 +57,5 @@ az deployment group create \
   --resource-group "$group" \
   --name "$component-$(date +%Y%m%d-%H%M%S)" \
   --parameters "$params" \
-  --parameters techResponsibility="$user" \
+  "${extra[@]}" \
   --confirm-with-what-if

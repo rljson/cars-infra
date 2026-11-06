@@ -74,6 +74,27 @@ Only show the changes:
 Both scripts check the environment and the active subscription first.
 Every resource gets the tag `techresponsibility` with the signed-in user.
 
+## The cluster
+
+The cluster stops every evening at 20:00 Berlin time, so it does not run
+idle overnight. Start it by hand before you work, and stop it when you are
+done; the start takes about five minutes:
+
+```bash
+az aks start -g rg-cars-demo -n aks-cars-demo
+az aks stop -g rg-cars-demo -n aks-cars-demo
+```
+
+Sign in with `kubectl` through Entra; the cluster has no local accounts.
+Install `kubectl` and `kubelogin` once, e.g. with
+`brew install kubectl Azure/kubelogin/kubelogin`:
+
+```bash
+az aks get-credentials -g rg-cars-demo -n aks-cars-demo
+kubelogin convert-kubeconfig -l azurecli
+kubectl get nodes
+```
+
 ## Test
 
 Build every Bicep and parameter file before each commit:
@@ -86,10 +107,14 @@ Build every Bicep and parameter file before each commit:
 
 - No CI: operators deploy by hand from their machine
 - One environment only, `demo`
+- `aks` and `aks-schedule` assign roles beyond AcrPull, so only members of
+  `cars-admins` can deploy them
 
 ## Status
 
-| Component            | Resource        | Deployed to demo |
-| -------------------- | --------------- | ---------------- |
-| `log-analytics`      | `log-cars-demo` | yes              |
-| `container-registry` | `crcarsdemo`    | yes              |
+| Component            | Resource                   | Deployed to demo |
+| -------------------- | -------------------------- | ---------------- |
+| `log-analytics`      | `log-cars-demo`            | yes              |
+| `container-registry` | `crcarsdemo`               | yes              |
+| `aks`                | `aks-cars-demo`            | yes              |
+| `aks-schedule`       | `logic-cars-demo-aks-stop` | yes              |

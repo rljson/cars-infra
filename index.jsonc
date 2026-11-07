@@ -14,7 +14,7 @@
   // 1-3 bullet points: the problem space.
   "domain": [
     "Azure resources: resource group, Log Analytics, container registry, AKS, Key Vault, SQL, storage",
-    "Bicep in the CARAT layout, what-if before every deploy; components: log-analytics, container-registry, aks, aks-schedule (nightly stop)",
+    "Bicep in a component layout, what-if before every deploy; components: log-analytics, container-registry, aks, aks-schedule (nightly stop)",
     "environment demo in rg-cars-demo, Germany West Central"
   ],
 

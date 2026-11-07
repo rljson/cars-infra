@@ -1,0 +1,12 @@
+{
+  "name": "@rljson/cars-infra",
+  "version": "0.0.1",
+  "description": "Azure resources of the cars application: Bicep components, a bootstrap script and a deploy script",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rljson/cars-infra.git"
+  }
+}

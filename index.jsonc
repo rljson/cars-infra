@@ -6,7 +6,7 @@
 
 {
   // The package name, as declared in pubspec.yaml / package.json.
-  "name": "cars-infra",
+  "name": "@rljson/cars-infra",
 
   // 1-2 sentence summary about this repo.
   "summary": "Azure resources of the cars application: bootstrap.sh creates the resource group, deploy.sh deploys Bicep components with what-if and a yes, test.sh builds every Bicep file. Deployed by hand, no CI.",

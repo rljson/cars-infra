@@ -6,8 +6,7 @@
 
 using 'main.bicep'
 
-param environment = 'demo'
-param sku = 'Basic'
+param stage = 'dev'
 
-// deploy.sh overrides this with the signed-in user
+// deploy.js overrides this with the signed-in user
 param techResponsibility = ''

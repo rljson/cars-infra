@@ -10,13 +10,14 @@ found in the LICENSE file in the root of this package.
 
 [English](README.md) | Deutsch
 
-Die Azure-Ressourcen der Cars-Anwendung, einer Beispiel-App auf Rljson: ein
-Bootstrap-Skript, ein Deploy-Skript und eine Bicep-Komponente je Ressource.
+Die Azure-Ressourcen der cars-Anwendung, einer Beispiel-App auf Rljson:
+Node.js-Skripte zum Vorbereiten, Ausrollen und Testen und eine
+Bicep-Komponente je Ressource.
 
 ## Motivation
 
-- Jede Azure-Ressource von cars ist in Git beschrieben, so lässt sich die
-  Umgebung allein aus diesem Repo neu aufbauen
+- Jede Azure-Ressource von cars ist in Git beschrieben, so lässt sich jede
+  Stufe allein aus diesem Repo neu aufbauen
 - Jedes Deployment zeigt zuerst ein What-if und wird erst nach einem Ja
   angewendet
 - Was auf diesen Ressourcen läuft, liegt in
@@ -25,20 +26,23 @@ Bootstrap-Skript, ein Deploy-Skript und eine Bicep-Komponente je Ressource.
 
 ## Aufbau
 
-| Ordner      | Inhalt                                                                    |
-| ----------- | ------------------------------------------------------------------------- |
-| `bootstrap` | Einmal je Umgebung ausgeführt: legt die Ressourcengruppe an               |
-| `lib`       | Einstellungen und Prüfungen, die die Skripte teilen                       |
-| `bicep`     | Ein Ordner je Komponente: `main.bicep` und `<component>-<env>.bicepparam` |
-| `test.sh`   | Baut jede Bicep- und Parameterdatei                                       |
+| Pfad                     | Inhalt                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| `bootstrap/bootstrap.js` | Einmal je Stufe: registriert die Ressourcenanbieter, legt die Gruppe an        |
+| `deploy.js`              | Rollt eine Komponente oder alle in eine Stufe aus                              |
+| `test.js`                | Führt die Unit-Tests von `lib` aus und baut jede Bicep- und Parameterdatei     |
+| `lib`                    | Einstellungen und Prüfungen, die die Skripte teilen, mit ihren Tests           |
+| `bicep`                  | Ein Ordner je Komponente: `main.bicep` und `<component>-<stage>.bicepparam`    |
 
-Keine Umgebung ist ausgerollt: `demo` wurde mit seinem Cluster gelöscht.
-Die Stufen `dev`, `stage` und `prod` folgen, in Germany West Central.
+Es gibt drei Stufen, `dev`, `stage` und `prod`, jede in ihrer eigenen
+Ressourcengruppe `rg-cars-<stage>` in Germany West Central. Sie teilen
+nichts.
 
 ## Verwendung
 
-Einmal die [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
-und ihre Bicep CLI installieren:
+Einmal [Node.js](https://nodejs.org) 22 oder neuer, die
+[Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) und
+ihre Bicep CLI installieren:
 
 ```bash
 az bicep install
@@ -52,45 +56,54 @@ az login
 az account set --subscription cars
 ```
 
-Die Ressourcengruppe einer Umgebung einmal anlegen:
+Eine Stufe einmal vorbereiten:
 
 ```bash
-bootstrap/bootstrap.sh demo
+node bootstrap/bootstrap.js dev
 ```
 
-Eine Komponente ausrollen; zuerst erscheint das What-if, und vor deinem Ja
-ändert sich nichts:
+Alle Komponenten einer Stufe der Reihe nach ausrollen; jede zeigt zuerst
+ihr What-if, und nichts ändert sich vor deinem Ja:
 
 ```bash
-./deploy.sh <component> demo
+node deploy.js all dev
 ```
 
-Nur die Änderungen zeigen:
+Eine Komponente ausrollen oder nur die Änderungen zeigen:
 
 ```bash
-./deploy.sh <component> demo --what-if
+node deploy.js network dev
+node deploy.js network dev --what-if
 ```
 
-Beide Skripte prüfen zuerst die Umgebung und das aktive Abonnement. Jede
-Ressource bekommt den Tag `techresponsibility` mit dem angemeldeten
+`--yes` wendet nach dem What-if ohne Rückfrage an, für Läufe ohne
+Terminal. Die Skripte prüfen zuerst die Stufe und das aktive Abonnement.
+Jede Ressource bekommt das Tag `techresponsibility` mit dem angemeldeten
 Benutzer.
 
 ## Test
 
-Vor jedem Commit jede Bicep- und Parameterdatei bauen:
+Vor jedem Commit:
 
 ```bash
-./test.sh
+node test.js
 ```
 
 ## Grenzen
 
-- Keine CI: Betreiber rollen von Hand von ihrem Rechner aus
-- Keine Umgebung ausgerollt, bis die Stufen `dev`, `stage` und `prod` bestehen
+- Noch keine CI: Betreiber rollen von Hand von ihrem Rechner aus; die
+  GitHub-Actions-Workflows werden dieselben Skripte aufrufen
+- Noch keine Datenbanken, kein Speicher und keine Identitäten
 
 ## Stand
 
-| Komponente           | Ressource        | Ausgerollt |
-| -------------------- | ---------------- | ---------- |
-| `log-analytics`      | `log-cars-<env>` | nein       |
-| `container-registry` | `crcars<env>`    | nein       |
+| Komponente           | Ressourcen je Stufe                                                                  | dev  | stage | prod |
+| -------------------- | ------------------------------------------------------------------------------------ | ---- | ----- | ---- |
+| `log-analytics`      | `log-cars-<stage>`                                                                   | ja   | nein  | nein |
+| `container-registry` | `crcars<stage>`                                                                      | ja   | nein  | nein |
+| `network`            | `vnet-cars-<stage>`, `snet-cars-<side>-<stage>`, `nsg-cars-<side>-<stage>`            | ja   | nein  | nein |
+| `environment`        | `cae-cars-origin-<stage>`, `cae-cars-custom-<stage>`                                 | blockiert | nein  | nein |
+
+Die Umgebungen von `dev` scheiterten: das Abonnement erlaubt nur eine
+Container-Apps-Umgebung in Germany West Central; ein höheres Kontingent
+ist nötig.

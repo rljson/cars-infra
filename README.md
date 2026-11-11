@@ -11,13 +11,13 @@ found in the LICENSE file in the root of this package.
 English | [Deutsch](README.de.md)
 
 The Azure resources of the cars application, an example app built on
-Rljson: a bootstrap script, a deploy script and one Bicep component per
-resource.
+Rljson: Node.js scripts to bootstrap, deploy and test, and one Bicep
+component per resource.
 
 ## Motivation
 
-- Every Azure resource of cars is described in git, so the environment can
-  be rebuilt from this repo alone
+- Every Azure resource of cars is described in git, so each stage can be
+  rebuilt from this repo alone
 - Each deploy shows a what-if first and applies only after a yes
 - What runs on these resources lives in
   [cars-deployment](https://github.com/rljson/cars-deployment), so a
@@ -25,20 +25,23 @@ resource.
 
 ## Layout
 
-| Folder      | Content                                                                   |
-| ----------- | ------------------------------------------------------------------------- |
-| `bootstrap` | Run once per environment: creates the resource group                      |
-| `lib`       | Settings and checks shared by the scripts                                 |
-| `bicep`     | One folder per component: `main.bicep` and `<component>-<env>.bicepparam` |
-| `test.sh`   | Builds every Bicep and parameter file                                     |
+| Path                     | Content                                                                     |
+| ------------------------ | --------------------------------------------------------------------------- |
+| `bootstrap/bootstrap.js` | Run once per stage: registers the resource providers, creates the group     |
+| `deploy.js`              | Deploys one component or all of them into a stage                           |
+| `test.js`                | Runs the unit tests of `lib` and builds every Bicep and parameter file      |
+| `lib`                    | Settings and checks shared by the scripts, with their tests                 |
+| `bicep`                  | One folder per component: `main.bicep` and `<component>-<stage>.bicepparam` |
 
-No environment is deployed: `demo` was deleted together with its cluster.
-The stages `dev`, `stage` and `prod` follow, in Germany West Central.
+There are three stages, `dev`, `stage` and `prod`, each in its own
+resource group `rg-cars-<stage>` in Germany West Central. They share
+nothing.
 
 ## Usage
 
-Install the [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
-and its Bicep CLI once:
+Install [Node.js](https://nodejs.org) 22 or later, the
+[Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) and
+its Bicep CLI once:
 
 ```bash
 az bicep install
@@ -52,44 +55,53 @@ az login
 az account set --subscription cars
 ```
 
-Create the resource group of an environment once:
+Prepare a stage once:
 
 ```bash
-bootstrap/bootstrap.sh demo
+node bootstrap/bootstrap.js dev
 ```
 
-Deploy a component; the what-if is shown first and nothing changes before
-your yes:
+Deploy all components of a stage in order; each shows its what-if first
+and nothing changes before your yes:
 
 ```bash
-./deploy.sh <component> demo
+node deploy.js all dev
 ```
 
-Only show the changes:
+Deploy one component, or only show the changes:
 
 ```bash
-./deploy.sh <component> demo --what-if
+node deploy.js network dev
+node deploy.js network dev --what-if
 ```
 
-Both scripts check the environment and the active subscription first.
+`--yes` applies after the what-if without asking, for runs without a
+terminal. The scripts check the stage and the active subscription first.
 Every resource gets the tag `techresponsibility` with the signed-in user.
 
 ## Test
 
-Build every Bicep and parameter file before each commit:
+Before each commit:
 
 ```bash
-./test.sh
+node test.js
 ```
 
 ## Limitations
 
-- No CI: operators deploy by hand from their machine
-- No environment deployed until the stages `dev`, `stage` and `prod` exist
+- No CI yet: operators deploy by hand from their machine; the GitHub
+  Actions workflows will call the same scripts
+- No databases, storage or identities yet
 
 ## Status
 
-| Component            | Resource         | Deployed |
-| -------------------- | ---------------- | -------- |
-| `log-analytics`      | `log-cars-<env>` | no       |
-| `container-registry` | `crcars<env>`    | no       |
+| Component            | Resources per stage                                                                  | dev | stage | prod |
+| -------------------- | ------------------------------------------------------------------------------------ | --- | ----- | ---- |
+| `log-analytics`      | `log-cars-<stage>`                                                                   | yes | no    | no   |
+| `container-registry` | `crcars<stage>`                                                                      | yes | no    | no   |
+| `network`            | `vnet-cars-<stage>`, `snet-cars-<side>-<stage>`, `nsg-cars-<side>-<stage>`            | yes | no    | no   |
+| `environment`        | `cae-cars-origin-<stage>`, `cae-cars-custom-<stage>`                                 | blocked | no    | no   |
+
+The environments of `dev` failed: the subscription allows only one
+Container Apps environment in Germany West Central; a higher quota is
+needed.

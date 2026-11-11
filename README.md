@@ -19,7 +19,7 @@ resource.
 - Every Azure resource of cars is described in git, so the environment can
   be rebuilt from this repo alone
 - Each deploy shows a what-if first and applies only after a yes
-- What runs inside the cluster lives in
+- What runs on these resources lives in
   [cars-deployment](https://github.com/rljson/cars-deployment), so a
   change to an image never touches the Azure resources
 
@@ -32,8 +32,8 @@ resource.
 | `bicep`     | One folder per component: `main.bicep` and `<component>-<env>.bicepparam` |
 | `test.sh`   | Builds every Bicep and parameter file                                     |
 
-The only environment is `demo`, in the resource group `rg-cars-demo` in
-Germany West Central.
+No environment is deployed: `demo` was deleted together with its cluster.
+The stages `dev`, `stage` and `prod` follow, in Germany West Central.
 
 ## Usage
 
@@ -74,27 +74,6 @@ Only show the changes:
 Both scripts check the environment and the active subscription first.
 Every resource gets the tag `techresponsibility` with the signed-in user.
 
-## The cluster
-
-The cluster stops every evening at 20:00 Berlin time, so it does not run
-idle overnight. Start it by hand before you work, and stop it when you are
-done; the start takes about five minutes:
-
-```bash
-az aks start -g rg-cars-demo -n aks-cars-demo
-az aks stop -g rg-cars-demo -n aks-cars-demo
-```
-
-Sign in with `kubectl` through Entra; the cluster has no local accounts.
-Install `kubectl` and `kubelogin` once, e.g. with
-`brew install kubectl Azure/kubelogin/kubelogin`:
-
-```bash
-az aks get-credentials -g rg-cars-demo -n aks-cars-demo
-kubelogin convert-kubeconfig -l azurecli
-kubectl get nodes
-```
-
 ## Test
 
 Build every Bicep and parameter file before each commit:
@@ -106,15 +85,11 @@ Build every Bicep and parameter file before each commit:
 ## Limitations
 
 - No CI: operators deploy by hand from their machine
-- One environment only, `demo`
-- `aks` and `aks-schedule` assign roles beyond AcrPull, so only members of
-  `cars-admins` can deploy them
+- No environment deployed until the stages `dev`, `stage` and `prod` exist
 
 ## Status
 
-| Component            | Resource                   | Deployed to demo |
-| -------------------- | -------------------------- | ---------------- |
-| `log-analytics`      | `log-cars-demo`            | yes              |
-| `container-registry` | `crcarsdemo`               | yes              |
-| `aks`                | `aks-cars-demo`            | yes              |
-| `aks-schedule`       | `logic-cars-demo-aks-stop` | yes              |
+| Component            | Resource         | Deployed |
+| -------------------- | ---------------- | -------- |
+| `log-analytics`      | `log-cars-<env>` | no       |
+| `container-registry` | `crcars<env>`    | no       |

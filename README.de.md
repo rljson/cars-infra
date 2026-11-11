@@ -19,7 +19,7 @@ Bootstrap-Skript, ein Deploy-Skript und eine Bicep-Komponente je Ressource.
   Umgebung allein aus diesem Repo neu aufbauen
 - Jedes Deployment zeigt zuerst ein What-if und wird erst nach einem Ja
   angewendet
-- Was im Cluster läuft, liegt in
+- Was auf diesen Ressourcen läuft, liegt in
   [cars-deployment](https://github.com/rljson/cars-deployment); so berührt
   eine Änderung an einem Image nie die Azure-Ressourcen
 
@@ -32,8 +32,8 @@ Bootstrap-Skript, ein Deploy-Skript und eine Bicep-Komponente je Ressource.
 | `bicep`     | Ein Ordner je Komponente: `main.bicep` und `<component>-<env>.bicepparam` |
 | `test.sh`   | Baut jede Bicep- und Parameterdatei                                       |
 
-Die einzige Umgebung ist `demo`, in der Ressourcengruppe `rg-cars-demo`
-in Germany West Central.
+Keine Umgebung ist ausgerollt: `demo` wurde mit seinem Cluster gelöscht.
+Die Stufen `dev`, `stage` und `prod` folgen, in Germany West Central.
 
 ## Verwendung
 
@@ -75,27 +75,6 @@ Beide Skripte prüfen zuerst die Umgebung und das aktive Abonnement. Jede
 Ressource bekommt den Tag `techresponsibility` mit dem angemeldeten
 Benutzer.
 
-## Der Cluster
-
-Der Cluster stoppt jeden Abend um 20:00 Uhr Berliner Zeit, damit er nicht
-ungenutzt über Nacht läuft. Starte ihn von Hand, bevor du arbeitest, und
-stoppe ihn, wenn du fertig bist; der Start dauert etwa fünf Minuten:
-
-```bash
-az aks start -g rg-cars-demo -n aks-cars-demo
-az aks stop -g rg-cars-demo -n aks-cars-demo
-```
-
-Mit `kubectl` meldest du dich über Entra an; der Cluster hat keine lokalen
-Konten. `kubectl` und `kubelogin` einmal installieren, z. B. mit
-`brew install kubectl Azure/kubelogin/kubelogin`:
-
-```bash
-az aks get-credentials -g rg-cars-demo -n aks-cars-demo
-kubelogin convert-kubeconfig -l azurecli
-kubectl get nodes
-```
-
 ## Test
 
 Vor jedem Commit jede Bicep- und Parameterdatei bauen:
@@ -107,15 +86,11 @@ Vor jedem Commit jede Bicep- und Parameterdatei bauen:
 ## Grenzen
 
 - Keine CI: Betreiber rollen von Hand von ihrem Rechner aus
-- Nur eine Umgebung, `demo`
-- `aks` und `aks-schedule` vergeben Rollen über AcrPull hinaus; nur
-  Mitglieder von `cars-admins` können sie ausrollen
+- Keine Umgebung ausgerollt, bis die Stufen `dev`, `stage` und `prod` bestehen
 
 ## Stand
 
-| Komponente           | Ressource                  | In demo ausgerollt |
-| -------------------- | -------------------------- | ------------------ |
-| `log-analytics`      | `log-cars-demo`            | ja                 |
-| `container-registry` | `crcarsdemo`               | ja                 |
-| `aks`                | `aks-cars-demo`            | ja                 |
-| `aks-schedule`       | `logic-cars-demo-aks-stop` | ja                 |
+| Komponente           | Ressource        | Ausgerollt |
+| -------------------- | ---------------- | ---------- |
+| `log-analytics`      | `log-cars-<env>` | nein       |
+| `container-registry` | `crcars<env>`    | nein       |

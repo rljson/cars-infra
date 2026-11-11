@@ -28,9 +28,4 @@ what-if first.
 | -------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `log-analytics`      | Log Analytics workspace `log-cars-<env>`                          | 30 days retention, 0.5 GB daily cap                                                                                                                                                                        |
 | `container-registry` | Container registry `crcars<env>`                                  | Basic, admin user off; images built with `az acr build`                                                                                                                                                    |
-| `aks`                | Kubernetes cluster `aks-cars-<env>`, nodes in `rg-cars-<env>-aks` | 1 × `Standard_D2s_v6`, Free tier, CNI overlay with Cilium, Entra and Azure RBAC, no local accounts, workload identity, Key Vault provider; AcrPull for the nodes, cluster admin for `CLUSTER_ADMIN_GROUPS` |
-| `aks-schedule`       | Logic App `logic-cars-<env>-aks-stop`                             | Stops the cluster daily at 20:00 Berlin time; may only stop that cluster                                                                                                                                   |
 
-`deploy.sh` passes `clusterAdminGroupIds` to each component that declares
-it: the object IDs of the Entra groups in `CLUSTER_ADMIN_GROUPS` of
-`lib/common.sh`, looked up by name, so no ID is kept in git.

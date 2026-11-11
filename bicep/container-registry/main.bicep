@@ -4,7 +4,7 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-// Container registry of one environment: holds the images the cluster runs.
+// Container registry of one environment: holds the images the container apps run.
 // Images are built inside the registry with `az acr build`.
 
 @description('Environment the registry belongs to, e.g. demo')

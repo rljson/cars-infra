@@ -5,25 +5,27 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-// Prepares a stage once: registers the resource providers the components
-// need and creates the resource group of the stage.
+// Prepares the subscription once: registers the resource providers the
+// components need and creates the resource group rg-cars.
 //
-// Usage: node bootstrap/bootstrap.js <stage>
+// Usage: node bootstrap/bootstrap.js
 
 import {
   azOutput,
   azShow,
+  Fail,
   LOCATION,
   PROVIDERS,
-  requireStage,
+  RESOURCE_GROUP,
   requireSubscription,
-  resourceGroup,
   run,
   signedInUser,
 } from '../lib/common.js';
 
 await run(() => {
-  const stage = requireStage(process.argv[2]);
+  if (process.argv.length > 2) {
+    throw new Fail('Usage: node bootstrap/bootstrap.js');
+  }
   requireSubscription();
 
   for (const provider of PROVIDERS) {
@@ -43,7 +45,7 @@ await run(() => {
     console.log(`✅ Registered ${provider}`);
   }
 
-  const group = resourceGroup(stage);
+  const group = RESOURCE_GROUP;
   if (azOutput(['group', 'exists', '--name', group]) === 'true') {
     console.log(`✅ ${group} exists already, nothing to do`);
     return;
@@ -58,7 +60,7 @@ await run(() => {
     LOCATION,
     '--tags',
     'application=cars',
-    `environment=${stage}`,
+    'environment=shared',
     `techresponsibility=${signedInUser()}`,
     '--output',
     'table',

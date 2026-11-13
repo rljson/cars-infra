@@ -12,12 +12,12 @@ found in the LICENSE file in the root of this package.
 
 Die Azure-Ressourcen der cars-Anwendung, einer Beispiel-App auf Rljson:
 Node.js-Skripte zum Vorbereiten, Ausrollen und Testen und eine
-Bicep-Komponente je Ressource.
+Bicep-Komponente je Ressource, darunter der Kubernetes-Cluster.
 
 ## Motivation
 
-- Jede Azure-Ressource von cars ist in Git beschrieben, so lässt sich jede
-  Stufe allein aus diesem Repo neu aufbauen
+- Jede Azure-Ressource von cars ist in Git beschrieben, so lässt sie sich
+  allein aus diesem Repo neu aufbauen
 - Jedes Deployment zeigt zuerst ein What-if und wird erst nach einem Ja
   angewendet
 - Was auf diesen Ressourcen läuft, liegt in
@@ -28,15 +28,35 @@ Bicep-Komponente je Ressource.
 
 | Pfad                     | Inhalt                                                                         |
 | ------------------------ | ------------------------------------------------------------------------------ |
-| `bootstrap/bootstrap.js` | Einmal je Stufe: registriert die Ressourcenanbieter, legt die Gruppe an        |
-| `deploy.js`              | Rollt eine Komponente oder alle in eine Stufe aus                              |
+| `bootstrap/bootstrap.js` | Einmal: registriert die Ressourcenanbieter, legt die Gruppe `rg-cars` an       |
+| `deploy.js`              | Rollt eine Komponente oder alle in `rg-cars` aus                               |
 | `test.js`                | Führt die Unit-Tests von `lib` aus und baut jede Bicep- und Parameterdatei     |
 | `lib`                    | Einstellungen und Prüfungen, die die Skripte teilen, mit ihren Tests           |
-| `bicep`                  | Ein Ordner je Komponente: `main.bicep` und `<component>-<stage>.bicepparam`    |
+| `bicep`                  | Ein Ordner je Komponente: `main.bicep` und `<component>.bicepparam`            |
 
-Es gibt drei Stufen, `dev`, `stage` und `prod`, jede in ihrer eigenen
-Ressourcengruppe `rg-cars-<stage>` in Germany West Central. Sie teilen
-nichts.
+Alle Ressourcen liegen in einer Ressourcengruppe `rg-cars` in Germany
+West Central und dienen den Stufen `dev`, `stage` und `prod` gemeinsam:
+ein Kubernetes-Cluster `aks-cars`, eine Registry, ein Netz, ein
+Log-Analytics-Arbeitsbereich und eine DNS-Zone. Was die Stufen und die
+Seiten im Cluster trennt, Namespaces, Quoten und Netzwerkrichtlinien,
+gehört nicht zu diesem Repo.
+
+```mermaid
+flowchart LR
+  subgraph rg["rg-cars"]
+    log["log-cars"]
+    cr["crcars"]
+    dns["DNS-Zone cars.&lt;domain&gt;"]
+    subgraph vnet["vnet-cars"]
+      sys["snet-cars-system"]
+      ori["snet-cars-origin"]
+      cus["snet-cars-custom"]
+    end
+    aks["aks-cars<br/>Pools system, origin, custom"]
+  end
+  aks -- "Knoten in" --> vnet
+  aks -- "zieht aus" --> cr
+```
 
 ## Verwendung
 
@@ -56,30 +76,42 @@ az login
 az account set --subscription cars
 ```
 
-Eine Stufe einmal vorbereiten:
+Das Abonnement einmal vorbereiten:
 
 ```bash
-node bootstrap/bootstrap.js dev
+node bootstrap/bootstrap.js
 ```
 
-Alle Komponenten einer Stufe der Reihe nach ausrollen; jede zeigt zuerst
-ihr What-if, und nichts ändert sich vor deinem Ja:
+Alle Komponenten der Reihe nach ausrollen; jede zeigt zuerst ihr What-if,
+und nichts ändert sich vor deinem Ja:
 
 ```bash
-node deploy.js all dev
+node deploy.js all
 ```
 
 Eine Komponente ausrollen oder nur die Änderungen zeigen:
 
 ```bash
-node deploy.js network dev
-node deploy.js network dev --what-if
+node deploy.js network
+node deploy.js network --what-if
 ```
 
 `--yes` wendet nach dem What-if ohne Rückfrage an, für Läufe ohne
-Terminal. Die Skripte prüfen zuerst die Stufe und das aktive Abonnement.
-Jede Ressource bekommt das Tag `techresponsibility` mit dem angemeldeten
-Benutzer.
+Terminal. Die Skripte prüfen zuerst das aktive Abonnement. Jede Ressource
+bekommt das Tag `techresponsibility` mit dem angemeldeten Benutzer. Die
+Komponente `aks` gibt den Gruppen `cars-admins` und `cars-operators`
+Admin-Rechte im Cluster; `deploy.js` sucht ihre Objekt-IDs über den Namen.
+
+Bevor `dns` ausgerollt werden kann, muss `bicep/dns/dns.bicepparam` die
+Zone nennen. Nach dem Ausrollen die Namensserver aus ihrer Ausgabe als
+NS-Einträge in die übergeordnete Domain eintragen.
+
+Mit dem Entra-Konto am Cluster anmelden:
+
+```bash
+az aks get-credentials --resource-group rg-cars --name aks-cars
+kubelogin convert-kubeconfig -l azurecli
+```
 
 ## Test
 
@@ -93,17 +125,19 @@ node test.js
 
 - Noch keine CI: Betreiber rollen von Hand von ihrem Rechner aus; die
   GitHub-Actions-Workflows werden dieselben Skripte aufrufen
-- Noch keine Datenbanken, kein Speicher und keine Identitäten
+- Noch keine Datenbanken, kein Speicher und keine Workload-Identitäten der
+  Apps
+- Der Cluster läuft Tag und Nacht; mit einem Knoten je Pool kostet er zu
+  Listenpreisen etwa 90 bis 200 USD im Monat, dazu etwa 20 USD für den
+  Load Balancer. Die Steuerungsebene ist im Free-Tarif, ohne
+  Verfügbarkeitszusage
 
 ## Stand
 
-| Komponente           | Ressourcen je Stufe                                                                  | dev  | stage | prod |
-| -------------------- | ------------------------------------------------------------------------------------ | ---- | ----- | ---- |
-| `log-analytics`      | `log-cars-<stage>`                                                                   | ja   | nein  | nein |
-| `container-registry` | `crcars<stage>`                                                                      | ja   | nein  | nein |
-| `network`            | `vnet-cars-<stage>`, `snet-cars-<side>-<stage>`, `nsg-cars-<side>-<stage>`            | ja   | nein  | nein |
-| `environment`        | `cae-cars-origin-<stage>`, `cae-cars-custom-<stage>`                                 | blockiert | nein  | nein |
-
-Die Umgebungen von `dev` scheiterten: das Abonnement erlaubt nur eine
-Container-Apps-Umgebung in Germany West Central; ein höheres Kontingent
-ist nötig.
+| Komponente           | Ressourcen                                                        | Ausgerollt |
+| -------------------- | ----------------------------------------------------------------- | ---------- |
+| `log-analytics`      | `log-cars`                                                        | nein       |
+| `container-registry` | `crcars`                                                          | nein       |
+| `network`            | `vnet-cars`, `snet-cars-<pool>`, `nsg-cars-<pool>`                | nein       |
+| `dns`                | die Zone `cars.<domain>`                                          | nein       |
+| `aks`                | `aks-cars`, `id-aks-cars`, Knoten-Ressourcengruppe `rg-cars-aks`  | nein       |

@@ -9,13 +9,13 @@
   "name": "@rljson/cars-infra",
 
   // 1-2 sentence summary about this repo.
-  "summary": "Azure resources of the cars application in the stages dev, stage and prod: Node.js scripts bootstrap.js (providers, resource group), deploy.js (Bicep components with what-if and a yes) and test.js (unit tests, Bicep builds). Deployed by hand, no CI yet.",
+  "summary": "Azure resources of the cars application, shared by the stages dev, stage and prod in one resource group rg-cars: Node.js scripts bootstrap.js (providers, resource group), deploy.js (Bicep components with what-if and a yes) and test.js (unit tests, Bicep builds). Deployed by hand, no CI yet.",
 
   // 1-3 bullet points: the problem space.
   "domain": [
-    "Azure resources per stage: resource group, Log Analytics, container registry, VNet with a subnet and NSG per side, Container Apps environments origin and custom; later SQL, storage, identities",
-    "Bicep in a component layout, <component>-<stage>.bicepparam, what-if before every deploy",
-    "stages dev, stage, prod in rg-cars-<stage>, Germany West Central"
+    "Azure resources: resource group rg-cars, Log Analytics, container registry crcars, VNet with a subnet and NSG per node pool, public DNS zone, AKS cluster aks-cars with node pools system, origin, custom; later SQL, storage, identities",
+    "AKS: Entra RBAC, workload identity, Azure CNI overlay with Cilium, taints per side, AcrPull, application routing add-on with Gateway API",
+    "Bicep in a component layout, one <component>.bicepparam each, what-if before every deploy, Germany West Central"
   ],
 
   // The repos this one depends on and the repos depending on it.
@@ -26,7 +26,7 @@
 
     // "<repo-b>": "why / API"
     "usedBy": {
-      "cars-deployment": "deploys the container apps into the Container Apps environments created here and pulls from the registry of the stage"
+      "cars-deployment": "deploys the apps into the cluster aks-cars created here, onto the node pools origin and custom, and pulls the images from crcars"
     }
   }
 }

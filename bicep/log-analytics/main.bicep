@@ -4,11 +4,8 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-// Log Analytics workspace of one stage: the place where logs and
-// metrics of the cars resources are collected.
-
-@description('Stage the workspace belongs to: dev, stage or prod')
-param stage string
+// Log Analytics workspace shared by every stage: the place where logs and
+// metrics of the cars resources and of the cluster are collected.
 
 @description('Azure region; defaults to the region of the resource group')
 param location string = resourceGroup().location
@@ -22,16 +19,16 @@ param techResponsibility string
 param retentionInDays int = 30
 
 @description('Daily ingestion cap in GB; ingestion stops for the day once reached')
-param dailyQuotaGb string = '0.5'
+param dailyQuotaGb string = '1'
 
 var tags = {
   application: 'cars'
-  environment: stage
+  environment: 'shared'
   techresponsibility: techResponsibility
 }
 
 resource workspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
-  name: 'log-cars-${stage}'
+  name: 'log-cars'
   location: location
   tags: tags
   properties: {

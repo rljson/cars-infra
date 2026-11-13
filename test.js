@@ -11,11 +11,11 @@
 //   node test.js
 
 import { spawnSync } from 'node:child_process';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 import { chdir } from 'node:process';
 import { fileURLToPath } from 'node:url';
 
-import { bicepFiles, COMPONENTS, paramsFile, STAGES } from './lib/common.js';
+import { bicepFiles, COMPONENTS, paramsFile } from './lib/common.js';
 
 chdir(dirname(fileURLToPath(import.meta.url)));
 
@@ -31,9 +31,9 @@ if (unit.status !== 0) {
 
 const files = bicepFiles('bicep');
 for (const component of COMPONENTS) {
-  for (const stage of STAGES) {
-    if (!files.includes(paramsFile(component, stage))) {
-      console.log(`❌ Missing ${paramsFile(component, stage)}`);
+  for (const file of [join('bicep', component, 'main.bicep'), paramsFile(component)]) {
+    if (!files.includes(file)) {
+      console.log(`❌ Missing ${file}`);
       failed++;
     }
   }

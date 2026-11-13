@@ -6,8 +6,12 @@
 
 using 'main.bicep'
 
-param stage = 'stage'
-param sku = 'Basic'
+param addressPrefix = '10.10.0.0/16'
+param subnetPrefixes = {
+  system: '10.10.0.0/24'
+  origin: '10.10.1.0/24'
+  custom: '10.10.2.0/24'
+}
 
 // deploy.js overrides this with the signed-in user
 param techResponsibility = ''

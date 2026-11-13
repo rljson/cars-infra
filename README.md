@@ -12,12 +12,12 @@ English | [Deutsch](README.de.md)
 
 The Azure resources of the cars application, an example app built on
 Rljson: Node.js scripts to bootstrap, deploy and test, and one Bicep
-component per resource.
+component per resource, among them the Kubernetes cluster.
 
 ## Motivation
 
-- Every Azure resource of cars is described in git, so each stage can be
-  rebuilt from this repo alone
+- Every Azure resource of cars is described in git, so it can be rebuilt
+  from this repo alone
 - Each deploy shows a what-if first and applies only after a yes
 - What runs on these resources lives in
   [cars-deployment](https://github.com/rljson/cars-deployment), so a
@@ -25,17 +25,37 @@ component per resource.
 
 ## Layout
 
-| Path                     | Content                                                                     |
-| ------------------------ | --------------------------------------------------------------------------- |
-| `bootstrap/bootstrap.js` | Run once per stage: registers the resource providers, creates the group     |
-| `deploy.js`              | Deploys one component or all of them into a stage                           |
-| `test.js`                | Runs the unit tests of `lib` and builds every Bicep and parameter file      |
-| `lib`                    | Settings and checks shared by the scripts, with their tests                 |
-| `bicep`                  | One folder per component: `main.bicep` and `<component>-<stage>.bicepparam` |
+| Path                     | Content                                                                  |
+| ------------------------ | ------------------------------------------------------------------------ |
+| `bootstrap/bootstrap.js` | Run once: registers the resource providers, creates the group `rg-cars`  |
+| `deploy.js`              | Deploys one component or all of them into `rg-cars`                      |
+| `test.js`                | Runs the unit tests of `lib` and builds every Bicep and parameter file   |
+| `lib`                    | Settings and checks shared by the scripts, with their tests              |
+| `bicep`                  | One folder per component: `main.bicep` and `<component>.bicepparam`      |
 
-There are three stages, `dev`, `stage` and `prod`, each in its own
-resource group `rg-cars-<stage>` in Germany West Central. They share
-nothing.
+All resources live in one resource group `rg-cars` in Germany West
+Central and serve the stages `dev`, `stage` and `prod` together: one
+Kubernetes cluster `aks-cars`, one registry, one network, one Log
+Analytics workspace and one DNS zone. What separates the stages and the
+sides inside the cluster, namespaces, quotas and network policies, is not
+part of this repo.
+
+```mermaid
+flowchart LR
+  subgraph rg["rg-cars"]
+    log["log-cars"]
+    cr["crcars"]
+    dns["DNS zone cars.&lt;domain&gt;"]
+    subgraph vnet["vnet-cars"]
+      sys["snet-cars-system"]
+      ori["snet-cars-origin"]
+      cus["snet-cars-custom"]
+    end
+    aks["aks-cars<br/>pools system, origin, custom"]
+  end
+  aks -- "nodes in" --> vnet
+  aks -- "pulls from" --> cr
+```
 
 ## Usage
 
@@ -55,29 +75,42 @@ az login
 az account set --subscription cars
 ```
 
-Prepare a stage once:
+Prepare the subscription once:
 
 ```bash
-node bootstrap/bootstrap.js dev
+node bootstrap/bootstrap.js
 ```
 
-Deploy all components of a stage in order; each shows its what-if first
-and nothing changes before your yes:
+Deploy all components in order; each shows its what-if first and nothing
+changes before your yes:
 
 ```bash
-node deploy.js all dev
+node deploy.js all
 ```
 
 Deploy one component, or only show the changes:
 
 ```bash
-node deploy.js network dev
-node deploy.js network dev --what-if
+node deploy.js network
+node deploy.js network --what-if
 ```
 
 `--yes` applies after the what-if without asking, for runs without a
-terminal. The scripts check the stage and the active subscription first.
-Every resource gets the tag `techresponsibility` with the signed-in user.
+terminal. The scripts check the active subscription first. Every resource
+gets the tag `techresponsibility` with the signed-in user. The component
+`aks` gives the groups `cars-admins` and `cars-operators` admin rights in
+the cluster; `deploy.js` looks up their object IDs by name.
+
+Before `dns` can be deployed, `bicep/dns/dns.bicepparam` must name the
+zone. After the deploy, add the name servers of its output as NS records
+to the parent domain.
+
+Sign in to the cluster with your Entra account:
+
+```bash
+az aks get-credentials --resource-group rg-cars --name aks-cars
+kubelogin convert-kubeconfig -l azurecli
+```
 
 ## Test
 
@@ -91,17 +124,17 @@ node test.js
 
 - No CI yet: operators deploy by hand from their machine; the GitHub
   Actions workflows will call the same scripts
-- No databases, storage or identities yet
+- No databases, storage or workload identities of the apps yet
+- The cluster runs day and night; with one node per pool it costs about
+  90 to 200 USD a month at list prices, plus about 20 USD for the load
+  balancer. The control plane is in the Free tier, without an uptime SLA
 
 ## Status
 
-| Component            | Resources per stage                                                                  | dev | stage | prod |
-| -------------------- | ------------------------------------------------------------------------------------ | --- | ----- | ---- |
-| `log-analytics`      | `log-cars-<stage>`                                                                   | yes | no    | no   |
-| `container-registry` | `crcars<stage>`                                                                      | yes | no    | no   |
-| `network`            | `vnet-cars-<stage>`, `snet-cars-<side>-<stage>`, `nsg-cars-<side>-<stage>`            | yes | no    | no   |
-| `environment`        | `cae-cars-origin-<stage>`, `cae-cars-custom-<stage>`                                 | blocked | no    | no   |
-
-The environments of `dev` failed: the subscription allows only one
-Container Apps environment in Germany West Central; a higher quota is
-needed.
+| Component            | Resources                                                         | Deployed |
+| -------------------- | ----------------------------------------------------------------- | -------- |
+| `log-analytics`      | `log-cars`                                                        | no       |
+| `container-registry` | `crcars`                                                          | no       |
+| `network`            | `vnet-cars`, `snet-cars-<pool>`, `nsg-cars-<pool>`                | no       |
+| `dns`                | the zone `cars.<domain>`                                          | no       |
+| `aks`                | `aks-cars`, `id-aks-cars`, node resource group `rg-cars-aks`      | no       |

@@ -8,26 +8,30 @@ found in the LICENSE file in the root of this package.
 
 # bicep
 
-One folder per component, one parameter file per stage:
+One folder per component, one parameter file each:
 
 ```text
 bicep/<component>/main.bicep
-bicep/<component>/<component>-<stage>.bicepparam
+bicep/<component>/<component>.bicepparam
 ```
 
-Every `main.bicep` declares `param stage string` and
-`param techResponsibility string` and sets them as the tags `environment`
-and `techresponsibility` on each resource; `deploy.js` passes the
-signed-in user. Each `.bicepparam` assigns `techResponsibility` the
-placeholder `''`, which `deploy.js` overrides.
+Every component deploys into the resource group `rg-cars` and serves all
+stages. Every `main.bicep` declares `param techResponsibility string` and
+sets the tags `application: cars`, `environment: shared` and
+`techresponsibility` on each resource; `deploy.js` passes the signed-in
+user. Each `.bicepparam` assigns `techResponsibility` the placeholder `''`,
+which `deploy.js` overrides. A component that declares
+`param clusterAdminGroupIds array` gets the object IDs of the groups
+`cars-admins` and `cars-operators`.
 
 `node test.js` builds every file; it is the test of this repo and runs
-before each commit. `node deploy.js <component|all> <stage>` deploys with a
+before each commit. `node deploy.js <component|all>` deploys with a
 what-if first; `all` deploys the components in the order of this table.
 
-| Component            | Resources                                                                    | Settings                                                                                                                         |
-| -------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `log-analytics`      | Log Analytics workspace `log-cars-<stage>`                                   | 30 days retention; daily cap 0.5 GB in dev, 1 GB in stage and prod                                                               |
-| `container-registry` | Container registry `crcars<stage>`                                           | Basic, admin user off; images built with `az acr build`                                                                          |
-| `network`            | VNet `vnet-cars-<stage>`, subnets `snet-cars-<side>-<stage>`, NSGs `nsg-cars-<side>-<stage>` | 10.10/16 dev, 10.20/16 stage, 10.30/16 prod; origin `.0.0/23`, custom `.2.0/23`, delegated to Container Apps; web from the internet allowed, between the subnets only HTTPS from custom to origin |
-| `environment`        | Container Apps environments `cae-cars-origin-<stage>`, `cae-cars-custom-<stage>` | Consumption workload profile, external, in the subnet of their side, logs to `log-cars-<stage>`; needs `log-analytics` and `network` |
+| Component            | Resources                                                                  | Settings                                                                                                                                                                                                                                                         |
+| -------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `log-analytics`      | Log Analytics workspace `log-cars`                                         | 30 days retention, daily cap 1 GB                                                                                                                                                                                                                                |
+| `container-registry` | Container registry `crcars`                                                | Basic, admin user off; images built with `az acr build`                                                                                                                                                                                                          |
+| `network`            | VNet `vnet-cars`, subnets `snet-cars-<pool>`, NSGs `nsg-cars-<pool>`       | 10.10.0.0/16; a /24 per node pool: system `.0`, origin `.1`, custom `.2`; web on 80 and 443 from the internet allowed, the VNet open inside, since the nodes of all pools must reach each other                                                                    |
+| `dns`                | Public DNS zone, e.g. `cars.example.com`                                   | The zone name is set in `dns.bicepparam`; outputs the name servers for the NS records of the parent domain                                                                                                                                                       |
+| `aks`                | Cluster `aks-cars`, identity `id-aks-cars`, node group `rg-cars-aks`       | Free tier; pools `system`, `origin`, `custom`, one `Standard_D2s_v6` node each, in the subnet of their name, `origin` and `custom` tainted `side=<pool>:NoSchedule` and labelled `side=<pool>`; Entra sign-in with Azure RBAC, no local accounts; OIDC issuer and workload identity; Azure CNI overlay with Cilium, pods 10.244.0.0/16, services 10.0.0.0/16; AcrPull on `crcars` for the nodes; application routing add-on with the managed Gateway API and Istio, no NGINX; needs `container-registry` and `network` |

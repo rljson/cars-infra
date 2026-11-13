@@ -6,7 +6,9 @@
 
 using 'main.bicep'
 
-param stage = 'prod'
+// The domain is not chosen yet; deploying dns fails until this names it,
+// e.g. 'cars.example.com'
+param zoneName = ''
 
 // deploy.js overrides this with the signed-in user
 param techResponsibility = ''

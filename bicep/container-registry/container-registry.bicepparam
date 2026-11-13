@@ -6,9 +6,7 @@
 
 using 'main.bicep'
 
-param stage = 'dev'
-param retentionInDays = 30
-param dailyQuotaGb = '0.5'
+param sku = 'Basic'
 
 // deploy.js overrides this with the signed-in user
 param techResponsibility = ''

@@ -8,13 +8,14 @@ found in the LICENSE file in the root of this package.
 
 # bootstrap
 
-Run once per stage, before any Bicep deploy:
+Run once, before any Bicep deploy:
 
 ```bash
-node bootstrap/bootstrap.js dev
+node bootstrap/bootstrap.js
 ```
 
 Registers the resource providers the components need, among them
-`Microsoft.App` for Container Apps, and creates the resource group
-`rg-cars-<stage>` in Germany West Central with the tags `application`,
-`environment` and `techresponsibility`. Does nothing that is done already.
+`Microsoft.ContainerService` for the cluster, and creates the resource
+group `rg-cars` in Germany West Central with the tags `application`,
+`environment: shared` and `techresponsibility`. Does nothing that is done
+already.

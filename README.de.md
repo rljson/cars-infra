@@ -136,8 +136,10 @@ node test.js
 
 | Komponente           | Ressourcen                                                        | Ausgerollt |
 | -------------------- | ----------------------------------------------------------------- | ---------- |
-| `log-analytics`      | `log-cars`                                                        | nein       |
-| `container-registry` | `crcars`                                                          | nein       |
-| `network`            | `vnet-cars`, `snet-cars-<pool>`, `nsg-cars-<pool>`                | nein       |
+| `log-analytics`      | `log-cars`                                                        | ja         |
+| `container-registry` | `crcars`                                                          | ja         |
+| `network`            | `vnet-cars`, `snet-cars-<pool>`, `nsg-cars-<pool>`                | ja         |
 | `dns`                | die Zone `cars.<domain>`                                          | nein       |
-| `aks`                | `aks-cars`, `id-aks-cars`, Knoten-Ressourcengruppe `rg-cars-aks`  | nein       |
+| `aks`                | `aks-cars`, `id-aks-cars`, Knoten-Ressourcengruppe `rg-cars-aks`  | ja         |
+
+`dns` wartet auf den Namen der Domain.

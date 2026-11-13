@@ -133,8 +133,10 @@ node test.js
 
 | Component            | Resources                                                         | Deployed |
 | -------------------- | ----------------------------------------------------------------- | -------- |
-| `log-analytics`      | `log-cars`                                                        | no       |
-| `container-registry` | `crcars`                                                          | no       |
-| `network`            | `vnet-cars`, `snet-cars-<pool>`, `nsg-cars-<pool>`                | no       |
+| `log-analytics`      | `log-cars`                                                        | yes      |
+| `container-registry` | `crcars`                                                          | yes      |
+| `network`            | `vnet-cars`, `snet-cars-<pool>`, `nsg-cars-<pool>`                | yes      |
 | `dns`                | the zone `cars.<domain>`                                          | no       |
-| `aks`                | `aks-cars`, `id-aks-cars`, node resource group `rg-cars-aks`      | no       |
+| `aks`                | `aks-cars`, `id-aks-cars`, node resource group `rg-cars-aks`      | yes      |
+
+`dns` waits for the name of the domain.

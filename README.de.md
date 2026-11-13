@@ -103,6 +103,11 @@ bekommt das Tag `techresponsibility` mit dem angemeldeten Benutzer. Die
 Komponente `aks` gibt den Gruppen `cars-admins` und `cars-operators`
 Admin-Rechte im Cluster; `deploy.js` sucht ihre Objekt-IDs über den Namen.
 
+`dns` wird nur für eine eigene Domain gebraucht; bis dahin nutzen die
+Apps die kostenlosen Azure-Namen
+`cars-<stage>.germanywestcentral.cloudapp.azure.com` ihrer Gateways, die
+nicht zu diesem Repo gehören. `dns` kommt in `deploy.js all` zuletzt,
+schlägt also erst fehl, wenn alle anderen Komponenten ausgerollt sind.
 Bevor `dns` ausgerollt werden kann, muss `bicep/dns/dns.bicepparam` die
 Zone nennen. Nach dem Ausrollen die Namensserver aus ihrer Ausgabe als
 NS-Einträge in die übergeordnete Domain eintragen.
@@ -151,8 +156,9 @@ node test.js
 | `log-analytics`      | `log-cars`                                                        | ja         |
 | `container-registry` | `crcars`                                                          | ja         |
 | `network`            | `vnet-cars`, `snet-cars-<pool>`, `nsg-cars-<pool>`                | ja         |
-| `dns`                | die Zone `cars.<domain>`                                          | nein       |
 | `aks`                | `aks-cars`, `id-aks-cars`, Knoten-Ressourcengruppe `rg-cars-aks`  | ja         |
 | `aks-schedule`       | `logic-aks-cars-stop`                                             | ja         |
+| `dns`                | die Zone `cars.<domain>`                                          | nein       |
 
-`dns` wartet auf den Namen der Domain.
+`dns` wird nicht gebraucht, solange die kostenlosen Azure-Namen genutzt
+werden.

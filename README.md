@@ -102,8 +102,12 @@ gets the tag `techresponsibility` with the signed-in user. The component
 `aks` gives the groups `cars-admins` and `cars-operators` admin rights in
 the cluster; `deploy.js` looks up their object IDs by name.
 
-Before `dns` can be deployed, `bicep/dns/dns.bicepparam` must name the
-zone. After the deploy, add the name servers of its output as NS records
+`dns` is needed only for a domain of its own; until then the apps use
+the free Azure names `cars-<stage>.germanywestcentral.cloudapp.azure.com`
+of their Gateways, which are not part of this repo. `dns` comes last in
+`deploy.js all`, so it fails only after every other component is
+deployed. Before `dns` can be deployed, `bicep/dns/dns.bicepparam` must
+name the zone. After the deploy, add the name servers of its output as NS records
 to the parent domain.
 
 Sign in to the cluster with your Entra account:
@@ -148,8 +152,8 @@ node test.js
 | `log-analytics`      | `log-cars`                                                        | yes      |
 | `container-registry` | `crcars`                                                          | yes      |
 | `network`            | `vnet-cars`, `snet-cars-<pool>`, `nsg-cars-<pool>`                | yes      |
-| `dns`                | the zone `cars.<domain>`                                          | no       |
 | `aks`                | `aks-cars`, `id-aks-cars`, node resource group `rg-cars-aks`      | yes      |
 | `aks-schedule`       | `logic-aks-cars-stop`                                             | yes      |
+| `dns`                | the zone `cars.<domain>`                                          | no       |
 
-`dns` waits for the name of the domain.
+`dns` is not needed while the free Azure names are used.

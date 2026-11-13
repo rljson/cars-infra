@@ -36,7 +36,8 @@ component per resource, among them the Kubernetes cluster.
 All resources live in one resource group `rg-cars` in Germany West
 Central and serve the stages `dev`, `stage` and `prod` together: one
 Kubernetes cluster `aks-cars`, one registry, one network, one Log
-Analytics workspace and one DNS zone. What separates the stages and the
+Analytics workspace and one DNS zone, and a Logic App that stops the
+cluster every evening. What separates the stages and the
 sides inside the cluster, namespaces, quotas and network policies, is not
 part of this repo.
 
@@ -112,6 +113,14 @@ az aks get-credentials --resource-group rg-cars --name aks-cars
 kubelogin convert-kubeconfig -l azurecli
 ```
 
+The component `aks-schedule` stops the cluster every day at 20:00
+Berlin time. Start it by hand before you work with it; it takes a few
+minutes:
+
+```bash
+az aks start --resource-group rg-cars --name aks-cars
+```
+
 ## Test
 
 Before each commit:
@@ -125,16 +134,22 @@ node test.js
 - No CI yet: operators deploy by hand from their machine; the GitHub
   Actions workflows will call the same scripts
 - No databases, storage or workload identities of the apps yet
-- The cluster runs day and night; with one node per pool it costs about
-  90 to 200 USD a month at list prices, plus about 20 USD for the load
-  balancer. The control plane is in the Free tier, without an uptime SLA
+- The cluster stops every evening at 20:00 and runs only after a manual
+  `az aks start`, so the apps of every stage, prod included, are offline
+  until then. Running day and night, one node per pool costs about 90 to
+  200 USD a month at list prices; stopped, only the disks, the public IP
+  and the load balancer cost, about 20 USD a month. The control plane is
+  in the Free tier, without an uptime SLA
 
 ## Status
 
 | Component            | Resources                                                         | Deployed |
 | -------------------- | ----------------------------------------------------------------- | -------- |
-| `log-analytics`      | `log-cars`                                                        | no       |
-| `container-registry` | `crcars`                                                          | no       |
-| `network`            | `vnet-cars`, `snet-cars-<pool>`, `nsg-cars-<pool>`                | no       |
+| `log-analytics`      | `log-cars`                                                        | yes      |
+| `container-registry` | `crcars`                                                          | yes      |
+| `network`            | `vnet-cars`, `snet-cars-<pool>`, `nsg-cars-<pool>`                | yes      |
 | `dns`                | the zone `cars.<domain>`                                          | no       |
-| `aks`                | `aks-cars`, `id-aks-cars`, node resource group `rg-cars-aks`      | no       |
+| `aks`                | `aks-cars`, `id-aks-cars`, node resource group `rg-cars-aks`      | yes      |
+| `aks-schedule`       | `logic-aks-cars-stop`                                             | yes      |
+
+`dns` waits for the name of the domain.

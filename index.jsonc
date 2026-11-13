@@ -13,7 +13,7 @@
 
   // 1-3 bullet points: the problem space.
   "domain": [
-    "Azure resources: resource group rg-cars, Log Analytics, container registry crcars, VNet with a subnet and NSG per node pool, public DNS zone, AKS cluster aks-cars with node pools system, origin, custom; later SQL, storage, identities",
+    "Azure resources: resource group rg-cars, Log Analytics, container registry crcars, VNet with a subnet and NSG per node pool, public DNS zone, AKS cluster aks-cars with node pools system, origin, custom, stopped every evening by a Logic App; later SQL, storage, identities",
     "AKS: Entra RBAC, workload identity, Azure CNI overlay with Cilium, taints per side, AcrPull, application routing add-on with Gateway API",
     "Bicep in a component layout, one <component>.bicepparam each, what-if before every deploy, Germany West Central"
   ],

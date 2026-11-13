@@ -12,6 +12,10 @@
   to `crcars`, and the application routing add-on with the managed
   Gateway API; `deploy.js` grants `cars-admins` and `cars-operators`
   admin rights in the cluster
+- Add the component `aks-schedule`: a Logic App `logic-aks-cars-stop`
+  stops `aks-cars` every day at 20:00 with the Azure Kubernetes Service
+  Contributor Role on this cluster only; `bootstrap.js` registers
+  `Microsoft.Logic`
 - Add the component `dns`: a public DNS zone whose name is set in its
   parameter file
 - `network` gets a subnet and NSG per node pool, `snet-cars-system`,

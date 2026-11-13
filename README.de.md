@@ -35,7 +35,7 @@ Bicep-Komponente je Ressource, darunter der Kubernetes-Cluster.
 | `bicep`                  | Ein Ordner je Komponente: `main.bicep` und `<component>.bicepparam`            |
 
 Alle Ressourcen liegen in einer Ressourcengruppe `rg-cars` in Germany
-West Central und dienen den Stufen `dev`, `stage` und `prod` gemeinsam:
+West Central und dienen den Stufen `dev`, `test` und `prod` gemeinsam:
 ein Kubernetes-Cluster `aks-cars`, eine Registry, ein Netz, ein
 Log-Analytics-Arbeitsbereich und eine DNS-Zone, dazu eine Logic App, die
 den Cluster jeden Abend stoppt. Was die Stufen und die

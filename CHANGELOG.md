@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Name the stages `dev`, `test` and `prod` in the README
 - Deploy every component once into one resource group `rg-cars` instead
   of one per stage: `bootstrap.js` and `deploy.js` take no stage, each
   component has one parameter file `<component>.bicepparam`, and the

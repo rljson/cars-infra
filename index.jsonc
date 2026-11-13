@@ -9,7 +9,7 @@
   "name": "@rljson/cars-infra",
 
   // 1-2 sentence summary about this repo.
-  "summary": "Azure resources of the cars application, shared by the stages dev, stage and prod in one resource group rg-cars: Node.js scripts bootstrap.js (providers, resource group), deploy.js (Bicep components with what-if and a yes) and test.js (unit tests, Bicep builds). Deployed by hand, no CI yet.",
+  "summary": "Azure resources of the cars application, shared by the stages dev, test and prod in one resource group rg-cars: Node.js scripts bootstrap.js (providers, resource group), deploy.js (Bicep components with what-if and a yes) and test.js (unit tests, Bicep builds). Deployed by hand, no CI yet.",
 
   // 1-3 bullet points: the problem space.
   "domain": [

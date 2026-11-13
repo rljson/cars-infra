@@ -34,7 +34,7 @@ component per resource, among them the Kubernetes cluster.
 | `bicep`                  | One folder per component: `main.bicep` and `<component>.bicepparam`      |
 
 All resources live in one resource group `rg-cars` in Germany West
-Central and serve the stages `dev`, `stage` and `prod` together: one
+Central and serve the stages `dev`, `test` and `prod` together: one
 Kubernetes cluster `aks-cars`, one registry, one network, one Log
 Analytics workspace and one DNS zone, and a Logic App that stops the
 cluster every evening. What separates the stages and the

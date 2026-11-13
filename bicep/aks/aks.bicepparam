@@ -6,13 +6,15 @@
 
 using 'main.bicep'
 
-param environment = 'demo'
-param nodeSize = 'Standard_D2s_v6'
-param nodeCount = 1
-param osDiskSizeGB = 64
 param tier = 'Free'
+param nodeSize = 'Standard_D2s_v6'
+param nodeCounts = {
+  system: 1
+  origin: 1
+  custom: 1
+}
 
-// deploy.sh overrides these: the signed-in user and the object IDs of the
-// groups in CLUSTER_ADMIN_GROUPS
+// deploy.js overrides these with the signed-in user and the object IDs
+// of the groups cars-admins and cars-operators
 param techResponsibility = ''
 param clusterAdminGroupIds = []

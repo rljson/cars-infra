@@ -6,9 +6,9 @@
 
 using 'main.bicep'
 
-param environment = 'demo'
-param stopHour = 20
-param timeZone = 'W. Europe Standard Time'
+// The domain is not chosen yet; deploying dns fails until this names it,
+// e.g. 'cars.example.com'
+param zoneName = ''
 
-// deploy.sh overrides this with the signed-in user
+// deploy.js overrides this with the signed-in user
 param techResponsibility = ''

@@ -8,12 +8,14 @@ found in the LICENSE file in the root of this package.
 
 # bootstrap
 
-Run once per environment, before any Bicep deploy:
+Run once, before any Bicep deploy:
 
 ```bash
-bootstrap/bootstrap.sh demo
+node bootstrap/bootstrap.js
 ```
 
-Creates the resource group `rg-cars-<env>` in Germany West Central with the tags
-`application`, `environment` and `techresponsibility`. Does nothing when
-the group exists already.
+Registers the resource providers the components need, among them
+`Microsoft.ContainerService` for the cluster, and creates the resource
+group `rg-cars` in Germany West Central with the tags `application`,
+`environment: shared` and `techresponsibility`. Does nothing that is done
+already.

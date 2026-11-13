@@ -11,34 +11,57 @@ found in the LICENSE file in the root of this package.
 English | [Deutsch](README.de.md)
 
 The Azure resources of the cars application, an example app built on
-Rljson: a bootstrap script, a deploy script and one Bicep component per
-resource.
+Rljson: Node.js scripts to bootstrap, deploy and test, and one Bicep
+component per resource, among them the Kubernetes cluster.
 
 ## Motivation
 
-- Every Azure resource of cars is described in git, so the environment can
-  be rebuilt from this repo alone
+- Every Azure resource of cars is described in git, so it can be rebuilt
+  from this repo alone
 - Each deploy shows a what-if first and applies only after a yes
-- What runs inside the cluster lives in
+- What runs on these resources lives in
   [cars-deployment](https://github.com/rljson/cars-deployment), so a
   change to an image never touches the Azure resources
 
 ## Layout
 
-| Folder      | Content                                                                   |
-| ----------- | ------------------------------------------------------------------------- |
-| `bootstrap` | Run once per environment: creates the resource group                      |
-| `lib`       | Settings and checks shared by the scripts                                 |
-| `bicep`     | One folder per component: `main.bicep` and `<component>-<env>.bicepparam` |
-| `test.sh`   | Builds every Bicep and parameter file                                     |
+| Path                     | Content                                                                  |
+| ------------------------ | ------------------------------------------------------------------------ |
+| `bootstrap/bootstrap.js` | Run once: registers the resource providers, creates the group `rg-cars`  |
+| `deploy.js`              | Deploys one component or all of them into `rg-cars`                      |
+| `test.js`                | Runs the unit tests of `lib` and builds every Bicep and parameter file   |
+| `lib`                    | Settings and checks shared by the scripts, with their tests              |
+| `bicep`                  | One folder per component: `main.bicep` and `<component>.bicepparam`      |
 
-The only environment is `demo`, in the resource group `rg-cars-demo` in
-Germany West Central.
+All resources live in one resource group `rg-cars` in Germany West
+Central and serve the stages `dev`, `stage` and `prod` together: one
+Kubernetes cluster `aks-cars`, one registry, one network, one Log
+Analytics workspace and one DNS zone. What separates the stages and the
+sides inside the cluster, namespaces, quotas and network policies, is not
+part of this repo.
+
+```mermaid
+flowchart LR
+  subgraph rg["rg-cars"]
+    log["log-cars"]
+    cr["crcars"]
+    dns["DNS zone cars.&lt;domain&gt;"]
+    subgraph vnet["vnet-cars"]
+      sys["snet-cars-system"]
+      ori["snet-cars-origin"]
+      cus["snet-cars-custom"]
+    end
+    aks["aks-cars<br/>pools system, origin, custom"]
+  end
+  aks -- "nodes in" --> vnet
+  aks -- "pulls from" --> cr
+```
 
 ## Usage
 
-Install the [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
-and its Bicep CLI once:
+Install [Node.js](https://nodejs.org) 22 or later, the
+[Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) and
+its Bicep CLI once:
 
 ```bash
 az bicep install
@@ -52,69 +75,66 @@ az login
 az account set --subscription cars
 ```
 
-Create the resource group of an environment once:
+Prepare the subscription once:
 
 ```bash
-bootstrap/bootstrap.sh demo
+node bootstrap/bootstrap.js
 ```
 
-Deploy a component; the what-if is shown first and nothing changes before
-your yes:
+Deploy all components in order; each shows its what-if first and nothing
+changes before your yes:
 
 ```bash
-./deploy.sh <component> demo
+node deploy.js all
 ```
 
-Only show the changes:
+Deploy one component, or only show the changes:
 
 ```bash
-./deploy.sh <component> demo --what-if
+node deploy.js network
+node deploy.js network --what-if
 ```
 
-Both scripts check the environment and the active subscription first.
-Every resource gets the tag `techresponsibility` with the signed-in user.
+`--yes` applies after the what-if without asking, for runs without a
+terminal. The scripts check the active subscription first. Every resource
+gets the tag `techresponsibility` with the signed-in user. The component
+`aks` gives the groups `cars-admins` and `cars-operators` admin rights in
+the cluster; `deploy.js` looks up their object IDs by name.
 
-## The cluster
+Before `dns` can be deployed, `bicep/dns/dns.bicepparam` must name the
+zone. After the deploy, add the name servers of its output as NS records
+to the parent domain.
 
-The cluster stops every evening at 20:00 Berlin time, so it does not run
-idle overnight. Start it by hand before you work, and stop it when you are
-done; the start takes about five minutes:
-
-```bash
-az aks start -g rg-cars-demo -n aks-cars-demo
-az aks stop -g rg-cars-demo -n aks-cars-demo
-```
-
-Sign in with `kubectl` through Entra; the cluster has no local accounts.
-Install `kubectl` and `kubelogin` once, e.g. with
-`brew install kubectl Azure/kubelogin/kubelogin`:
+Sign in to the cluster with your Entra account:
 
 ```bash
-az aks get-credentials -g rg-cars-demo -n aks-cars-demo
+az aks get-credentials --resource-group rg-cars --name aks-cars
 kubelogin convert-kubeconfig -l azurecli
-kubectl get nodes
 ```
 
 ## Test
 
-Build every Bicep and parameter file before each commit:
+Before each commit:
 
 ```bash
-./test.sh
+node test.js
 ```
 
 ## Limitations
 
-- No CI: operators deploy by hand from their machine
-- One environment only, `demo`
-- `aks` and `aks-schedule` assign roles beyond AcrPull, so only members of
-  `cars-admins` can deploy them
+- No CI yet: operators deploy by hand from their machine; the GitHub
+  Actions workflows will call the same scripts
+- No databases, storage or workload identities of the apps yet
+- The cluster runs day and night; with one node per pool it costs about
+  90 to 200 USD a month at list prices, plus about 20 USD for the load
+  balancer. The control plane is in the Free tier, without an uptime SLA
 
 ## Status
 
-| Component            | Resource                   | Deployed to demo |
-| -------------------- | -------------------------- | ---------------- |
-| `log-analytics`      | `log-cars-demo`            | yes              |
-| `container-registry` | `crcarsdemo`               | yes              |
-| `aks`                | `aks-cars-demo`            | yes              |
-| `aks-schedule`       | `logic-cars-demo-aks-stop` | yes              |
+| Component            | Resources                                                         | Deployed |
+| -------------------- | ----------------------------------------------------------------- | -------- |
+| `log-analytics`      | `log-cars`                                                        | no       |
+| `container-registry` | `crcars`                                                          | no       |
+| `network`            | `vnet-cars`, `snet-cars-<pool>`, `nsg-cars-<pool>`                | no       |
+| `dns`                | the zone `cars.<domain>`                                          | no       |
+| `aks`                | `aks-cars`, `id-aks-cars`, node resource group `rg-cars-aks`      | no       |

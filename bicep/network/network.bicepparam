@@ -6,9 +6,12 @@
 
 using 'main.bicep'
 
-param environment = 'demo'
-param retentionInDays = 30
-param dailyQuotaGb = '0.5'
+param addressPrefix = '10.10.0.0/16'
+param subnetPrefixes = {
+  system: '10.10.0.0/24'
+  origin: '10.10.1.0/24'
+  custom: '10.10.2.0/24'
+}
 
-// deploy.sh overrides this with the signed-in user
+// deploy.js overrides this with the signed-in user
 param techResponsibility = ''

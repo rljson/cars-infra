@@ -10,35 +10,59 @@ found in the LICENSE file in the root of this package.
 
 [English](README.md) | Deutsch
 
-Die Azure-Ressourcen der Cars-Anwendung, einer Beispiel-App auf Rljson: ein
-Bootstrap-Skript, ein Deploy-Skript und eine Bicep-Komponente je Ressource.
+Die Azure-Ressourcen der cars-Anwendung, einer Beispiel-App auf Rljson:
+Node.js-Skripte zum Vorbereiten, Ausrollen und Testen und eine
+Bicep-Komponente je Ressource, darunter der Kubernetes-Cluster.
 
 ## Motivation
 
-- Jede Azure-Ressource von cars ist in Git beschrieben, so lässt sich die
-  Umgebung allein aus diesem Repo neu aufbauen
+- Jede Azure-Ressource von cars ist in Git beschrieben, so lässt sie sich
+  allein aus diesem Repo neu aufbauen
 - Jedes Deployment zeigt zuerst ein What-if und wird erst nach einem Ja
   angewendet
-- Was im Cluster läuft, liegt in
+- Was auf diesen Ressourcen läuft, liegt in
   [cars-deployment](https://github.com/rljson/cars-deployment); so berührt
   eine Änderung an einem Image nie die Azure-Ressourcen
 
 ## Aufbau
 
-| Ordner      | Inhalt                                                                    |
-| ----------- | ------------------------------------------------------------------------- |
-| `bootstrap` | Einmal je Umgebung ausgeführt: legt die Ressourcengruppe an               |
-| `lib`       | Einstellungen und Prüfungen, die die Skripte teilen                       |
-| `bicep`     | Ein Ordner je Komponente: `main.bicep` und `<component>-<env>.bicepparam` |
-| `test.sh`   | Baut jede Bicep- und Parameterdatei                                       |
+| Pfad                     | Inhalt                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| `bootstrap/bootstrap.js` | Einmal: registriert die Ressourcenanbieter, legt die Gruppe `rg-cars` an       |
+| `deploy.js`              | Rollt eine Komponente oder alle in `rg-cars` aus                               |
+| `test.js`                | Führt die Unit-Tests von `lib` aus und baut jede Bicep- und Parameterdatei     |
+| `lib`                    | Einstellungen und Prüfungen, die die Skripte teilen, mit ihren Tests           |
+| `bicep`                  | Ein Ordner je Komponente: `main.bicep` und `<component>.bicepparam`            |
 
-Die einzige Umgebung ist `demo`, in der Ressourcengruppe `rg-cars-demo`
-in Germany West Central.
+Alle Ressourcen liegen in einer Ressourcengruppe `rg-cars` in Germany
+West Central und dienen den Stufen `dev`, `stage` und `prod` gemeinsam:
+ein Kubernetes-Cluster `aks-cars`, eine Registry, ein Netz, ein
+Log-Analytics-Arbeitsbereich und eine DNS-Zone. Was die Stufen und die
+Seiten im Cluster trennt, Namespaces, Quoten und Netzwerkrichtlinien,
+gehört nicht zu diesem Repo.
+
+```mermaid
+flowchart LR
+  subgraph rg["rg-cars"]
+    log["log-cars"]
+    cr["crcars"]
+    dns["DNS-Zone cars.&lt;domain&gt;"]
+    subgraph vnet["vnet-cars"]
+      sys["snet-cars-system"]
+      ori["snet-cars-origin"]
+      cus["snet-cars-custom"]
+    end
+    aks["aks-cars<br/>Pools system, origin, custom"]
+  end
+  aks -- "Knoten in" --> vnet
+  aks -- "zieht aus" --> cr
+```
 
 ## Verwendung
 
-Einmal die [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
-und ihre Bicep CLI installieren:
+Einmal [Node.js](https://nodejs.org) 22 oder neuer, die
+[Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) und
+ihre Bicep CLI installieren:
 
 ```bash
 az bicep install
@@ -52,70 +76,68 @@ az login
 az account set --subscription cars
 ```
 
-Die Ressourcengruppe einer Umgebung einmal anlegen:
+Das Abonnement einmal vorbereiten:
 
 ```bash
-bootstrap/bootstrap.sh demo
+node bootstrap/bootstrap.js
 ```
 
-Eine Komponente ausrollen; zuerst erscheint das What-if, und vor deinem Ja
-ändert sich nichts:
+Alle Komponenten der Reihe nach ausrollen; jede zeigt zuerst ihr What-if,
+und nichts ändert sich vor deinem Ja:
 
 ```bash
-./deploy.sh <component> demo
+node deploy.js all
 ```
 
-Nur die Änderungen zeigen:
+Eine Komponente ausrollen oder nur die Änderungen zeigen:
 
 ```bash
-./deploy.sh <component> demo --what-if
+node deploy.js network
+node deploy.js network --what-if
 ```
 
-Beide Skripte prüfen zuerst die Umgebung und das aktive Abonnement. Jede
-Ressource bekommt den Tag `techresponsibility` mit dem angemeldeten
-Benutzer.
+`--yes` wendet nach dem What-if ohne Rückfrage an, für Läufe ohne
+Terminal. Die Skripte prüfen zuerst das aktive Abonnement. Jede Ressource
+bekommt das Tag `techresponsibility` mit dem angemeldeten Benutzer. Die
+Komponente `aks` gibt den Gruppen `cars-admins` und `cars-operators`
+Admin-Rechte im Cluster; `deploy.js` sucht ihre Objekt-IDs über den Namen.
 
-## Der Cluster
+Bevor `dns` ausgerollt werden kann, muss `bicep/dns/dns.bicepparam` die
+Zone nennen. Nach dem Ausrollen die Namensserver aus ihrer Ausgabe als
+NS-Einträge in die übergeordnete Domain eintragen.
 
-Der Cluster stoppt jeden Abend um 20:00 Uhr Berliner Zeit, damit er nicht
-ungenutzt über Nacht läuft. Starte ihn von Hand, bevor du arbeitest, und
-stoppe ihn, wenn du fertig bist; der Start dauert etwa fünf Minuten:
-
-```bash
-az aks start -g rg-cars-demo -n aks-cars-demo
-az aks stop -g rg-cars-demo -n aks-cars-demo
-```
-
-Mit `kubectl` meldest du dich über Entra an; der Cluster hat keine lokalen
-Konten. `kubectl` und `kubelogin` einmal installieren, z. B. mit
-`brew install kubectl Azure/kubelogin/kubelogin`:
+Mit dem Entra-Konto am Cluster anmelden:
 
 ```bash
-az aks get-credentials -g rg-cars-demo -n aks-cars-demo
+az aks get-credentials --resource-group rg-cars --name aks-cars
 kubelogin convert-kubeconfig -l azurecli
-kubectl get nodes
 ```
 
 ## Test
 
-Vor jedem Commit jede Bicep- und Parameterdatei bauen:
+Vor jedem Commit:
 
 ```bash
-./test.sh
+node test.js
 ```
 
 ## Grenzen
 
-- Keine CI: Betreiber rollen von Hand von ihrem Rechner aus
-- Nur eine Umgebung, `demo`
-- `aks` und `aks-schedule` vergeben Rollen über AcrPull hinaus; nur
-  Mitglieder von `cars-admins` können sie ausrollen
+- Noch keine CI: Betreiber rollen von Hand von ihrem Rechner aus; die
+  GitHub-Actions-Workflows werden dieselben Skripte aufrufen
+- Noch keine Datenbanken, kein Speicher und keine Workload-Identitäten der
+  Apps
+- Der Cluster läuft Tag und Nacht; mit einem Knoten je Pool kostet er zu
+  Listenpreisen etwa 90 bis 200 USD im Monat, dazu etwa 20 USD für den
+  Load Balancer. Die Steuerungsebene ist im Free-Tarif, ohne
+  Verfügbarkeitszusage
 
 ## Stand
 
-| Komponente           | Ressource                  | In demo ausgerollt |
-| -------------------- | -------------------------- | ------------------ |
-| `log-analytics`      | `log-cars-demo`            | ja                 |
-| `container-registry` | `crcarsdemo`               | ja                 |
-| `aks`                | `aks-cars-demo`            | ja                 |
-| `aks-schedule`       | `logic-cars-demo-aks-stop` | ja                 |
+| Komponente           | Ressourcen                                                        | Ausgerollt |
+| -------------------- | ----------------------------------------------------------------- | ---------- |
+| `log-analytics`      | `log-cars`                                                        | nein       |
+| `container-registry` | `crcars`                                                          | nein       |
+| `network`            | `vnet-cars`, `snet-cars-<pool>`, `nsg-cars-<pool>`                | nein       |
+| `dns`                | die Zone `cars.<domain>`                                          | nein       |
+| `aks`                | `aks-cars`, `id-aks-cars`, Knoten-Ressourcengruppe `rg-cars-aks`  | nein       |
